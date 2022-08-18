@@ -1,0 +1,11 @@
+{
+    "routes": [
+        {
+            "route": "/api/PostComment",
+            "allowedRoles": ["authenticated"],
+        }
+    ],
+    "platform": {
+        "apiRuntime": "node:16"
+    }
+}
