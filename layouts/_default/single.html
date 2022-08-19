@@ -54,7 +54,87 @@
     {{- .Content -}}
     {{- partial "tags.html" . -}}
 
+    <script src="https://unpkg.com/vue@3"></script>
 
+    <div id="app">
+      <hr />
+      <a name="comments"></a><h3>Comments</h3>
+
+      <div v-if="authenticatedUser">
+        <h4>New comment</h4>
+        <div>Logged in as [[ authenticatedUser.clientPrincipal.userDetails ]] (<a href="/.auth/logout">logout</a>)</div>
+        <form @submit.prevent="addComment">
+          <textarea v-model="newComment" placeholder="Write your comment here"></textarea>
+          <br />
+          <button type="submit">Submit</button>
+        </form>
+        <br />
+      </div>
+      <div v-else>
+        <h4>Please <a href="#" @click.prevent="login">log in</a> to comment</h4>
+      </div>
+
+      <div v-for="comment in comments" :key="comment.id">
+        <div class="comment">
+          <div class="comment-header">
+            <div class="comment-author">
+              <strong>[[ comment.author ]]</strong>
+            </div>
+            <div class="comment-date">
+              [[ new Date(comment._ts * 1000).toLocaleString() ]]
+            </div>
+          </div>
+          <div class="comment-body">
+            [[ comment.comment ]]
+          </div><br />
+        </div>
+      </div>
+    </div>
+    <script>
+      const { createApp } = Vue
+
+      createApp({
+        data() {
+          return {
+            articleId: /\/posts\/(.+?)\//.exec(window.location.pathname)[1],
+            newComment: '',
+            comments: [],
+            authenticatedUser: null
+          }
+        },
+        async mounted() {
+          this.comments = await fetch(`/api/ListComments?articleid=${encodeURIComponent(this.articleId)}`).then(res => res.json())
+
+          this.authenticatedUser = await fetch('/.auth/me').then(res => res.json())
+          if (!this.authenticatedUser.clientPrincipal) {
+            this.authenticatedUser = null
+          }
+        },
+        methods: {
+          async addComment() {
+            const postedComment = await fetch(`/api/PostComment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                articleId: this.articleId,
+                comment: this.newComment,
+              })
+            }).then(res => res.json())
+            
+            if (postedComment) {
+              this.comments.unshift(postedComment)
+              this.newComment = ''
+            }
+          },
+          login() {
+            window.location.href = `/.auth/login/github?post_login_redirect_uri=${window.location.href}`
+          }
+        },
+        delimiters: ['[[', ']]'],
+      }).mount('#app')
+    </script>
 
     <aside class="w-30-l mt6-l">
       {{- partial "menu-contextual.html" . -}}
