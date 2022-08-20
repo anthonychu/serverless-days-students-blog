@@ -2,7 +2,7 @@
     "routes": [
         {
             "route": "/api/PostComment",
-            "allowedRoles": ["authenticated"],
+            "allowedRoles": ["authenticated"]
         }
     ],
     "platform": {
